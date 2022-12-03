@@ -1,19 +1,25 @@
 package speedhunt.code;
 
+import net.md_5.bungee.api.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
 import org.bukkit.event.HandlerList;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class SpeedrunVsHunterPlugin extends JavaPlugin implements CommandExecutor {
+public class SpeedrunVsHunterPlugin extends JavaPlugin implements CommandExecutor, Listener {
   private Game game;
   private int taskId;
 
   public void onEnable() {
+    getServer().getPluginManager().registerEvents(this, this);
     getCommand("start").setExecutor(this);
   }
 
@@ -52,5 +58,16 @@ public class SpeedrunVsHunterPlugin extends JavaPlugin implements CommandExecuto
 
   public void setTask(int taskId) {
     this.taskId = taskId;
+  }
+
+  @EventHandler
+  public void onPlayerJoin(PlayerJoinEvent e) {
+    Player player = e.getPlayer();
+
+    player.sendMessage(ChatColor.WHITE + "Start game:");
+    player.sendMessage(ChatColor.RED + "/start [runners] [settings]");
+    player.sendMessage(ChatColor.RED + "Settings: headstart, border");
+
+    player.sendMessage(ChatColor.WHITE + "Runners should be space separated. Setting key and value separated with =");
   }
 }
