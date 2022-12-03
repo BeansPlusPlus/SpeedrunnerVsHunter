@@ -35,16 +35,19 @@ public class SpeedrunVsHunterPlugin extends JavaPlugin implements CommandExecuto
     List<String> runners = new ArrayList<>();
 
     int headStart = 30;
+    int worldBorder = 5000;
 
     for (String arg : args) {
       if (arg.startsWith("headstart=")) {
         headStart = Integer.parseInt(arg.split("=")[1]);
+      } else if (arg.startsWith("border=")) {
+        worldBorder = Integer.parseInt(arg.split("=")[1]);
       } else {
         runners.add(arg.toLowerCase());
       }
     }
 
-    return new Game(this, runners, headStart);
+    return new Game(this, runners, headStart, worldBorder);
   }
 
   public void setTask(int taskId) {

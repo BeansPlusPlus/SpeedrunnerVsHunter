@@ -49,8 +49,17 @@ public class Game implements Listener {
 
   private Map<String, Team> assignedPlayers = new HashMap<>();
 
-  public Game(SpeedrunVsHunterPlugin plugin, List<String> runners, int waitSecs) {
+  public Game(SpeedrunVsHunterPlugin plugin, List<String> runners, int waitSecs, int worldBorder) {
+    for (World world : Bukkit.getWorlds()) {
+      world.getWorldBorder().setSize(worldBorder);
+    }
+
     for (Player player : Bukkit.getOnlinePlayers()) {
+      player.setHealth(20);
+      player.setLevel(0);
+      player.setSaturation(20);
+      player.getInventory().clear();
+
       if (runners.contains(player.getName().toLowerCase())) {
         addToTeam(player.getName(), Team.RUNNER);
       } else {
