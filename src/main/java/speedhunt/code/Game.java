@@ -27,7 +27,7 @@ public class Game implements Listener {
    * Teams
    */
   private enum Team {
-    RUNNER(ChatColor.AQUA), HUNTER(ChatColor.RED);
+    RUNNER(ChatColor.AQUA), HUNTER(ChatColor.GOLD);
 
     private ChatColor colour;
 
@@ -49,9 +49,9 @@ public class Game implements Listener {
 
   private Map<String, Team> assignedPlayers = new HashMap<>();
 
-  public Game(SpeedrunVsHunterPlugin plugin, List<String> runners, int waitSecs, int worldBorder) {
+  public Game(SpeedrunVsHunterPlugin plugin) {
     for (World world : Bukkit.getWorlds()) {
-      world.getWorldBorder().setSize(worldBorder);
+      world.getWorldBorder().setSize(GameConfiguration.getInstance().getWorldBorder());
     }
 
     for (Player player : Bukkit.getOnlinePlayers()) {
@@ -60,22 +60,22 @@ public class Game implements Listener {
       player.setSaturation(20);
       player.getInventory().clear();
 
-      if (runners.contains(player.getName().toLowerCase())) {
+      if (GameConfiguration.getInstance().getRunners().contains(player.getName())) {
         addToTeam(player.getName(), Team.RUNNER);
       } else {
         addToTeam(player.getName(), Team.HUNTER);
       }
     }
 
-    cancelHunterMovement = waitSecs > 0;
+    cancelHunterMovement = GameConfiguration.getInstance().getHeadStart() > 0;
 
-    showAllChatMessage(ChatColor.RED + "Hunters are not allowed to move for " + waitSecs + " seconds.");
+    showAllChatMessage(ChatColor.BLUE + "Hunters are not allowed to move for " + GameConfiguration.getInstance().getHeadStart() + " seconds.");
 
     if (cancelHunterMovement) {
       plugin.setTask(Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(plugin, () -> {
-        showAllChatMessage(ChatColor.RED + "Hunters can move now");
+        showAllChatMessage(ChatColor.BLUE + "Hunters can move now");
         cancelHunterMovement = false;
-      }, 20 * waitSecs));
+      }, 20 * GameConfiguration.getInstance().getHeadStart()));
     }
 
     Bukkit.getServer().getPluginManager().registerEvents(this, plugin);
@@ -148,7 +148,7 @@ public class Game implements Listener {
   public Scoreboard getScoreboard() {
     Scoreboard scoreboard = Bukkit.getScoreboardManager().getNewScoreboard();
 
-    Objective obj = scoreboard.registerNewObjective("rvh", "rvh", ChatColor.YELLOW + "Runners Vs Hunters");
+    Objective obj = scoreboard.registerNewObjective("hvr", "hvr", "Hunter Vs Speedrunner");
     obj.setDisplaySlot(DisplaySlot.PLAYER_LIST);
 
     org.bukkit.scoreboard.Team hunterTeam = scoreboard.registerNewTeam(Team.HUNTER.getColour() + Team.HUNTER.toString());
@@ -184,13 +184,13 @@ public class Game implements Listener {
     String pName = e.getEntity().getName();
     if (getPlayerTeam(pName) == Team.RUNNER) {
       removePlayer(pName);
-      showAllChatMessage(ChatColor.AQUA + "A runner has died: " + pName);
+      showAllChatMessage(Team.RUNNER.getColour() + "A runner has died: " + pName);
       refreshScoreboard();
       if (getTeamSize(Team.RUNNER) == 0) {
-        showAllChatMessage(ChatColor.RED + "Hunters win!");
+        showAllChatMessage(Team.HUNTER.getColour() + "Hunters win!");
 
       } else {
-        e.getEntity().sendMessage(ChatColor.GREEN + "Right click an alive runner to rejoin the running team.");
+        e.getEntity().sendMessage(ChatColor.BLUE + "Right click an alive runner to rejoin the running team.");
       }
     }
   }
@@ -257,7 +257,7 @@ public class Game implements Listener {
   @EventHandler
   public void onEntityDeath(EntityDeathEvent e) {
     if (e.getEntity().getType() == EntityType.ENDER_DRAGON) {
-      showAllChatMessage(ChatColor.AQUA + "Runners win!");
+      showAllChatMessage(Team.RUNNER.getColour() + "Runners win!");
       Bukkit.getServer().shutdown();
     }
   }
