@@ -15,7 +15,6 @@ import java.util.stream.Collectors;
 
 public class SpeedrunVsHunterPlugin extends JavaPlugin implements CommandExecutor, Listener {
   private Game game;
-  private int taskId;
 
   public void onEnable() {
     getServer().getPluginManager().registerEvents(this, this);
@@ -33,17 +32,11 @@ public class SpeedrunVsHunterPlugin extends JavaPlugin implements CommandExecuto
     }
 
     if (game != null) {
-      // cancel previous game
-      HandlerList.unregisterAll(game);
-      getServer().getScheduler().cancelTask(taskId);
+      game.end();
     }
     game = new Game(this);
 
     return true;
-  }
-
-  public void setTask(int taskId) {
-    this.taskId = taskId;
   }
 
   @EventHandler

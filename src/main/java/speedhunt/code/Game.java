@@ -7,6 +7,7 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
@@ -46,6 +47,7 @@ public class Game implements Listener {
   }
 
   private boolean cancelHunterMovement;
+  private int taskId;
 
   private Map<String, Team> assignedPlayers = new HashMap<>();
 
@@ -72,10 +74,10 @@ public class Game implements Listener {
     showAllChatMessage(ChatColor.BLUE + "Hunters are not allowed to move for " + GameConfiguration.getInstance().getHeadStart() + " seconds.");
 
     if (cancelHunterMovement) {
-      plugin.setTask(Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(plugin, () -> {
+      taskId = Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(plugin, () -> {
         showAllChatMessage(ChatColor.BLUE + "Hunters can move now");
         cancelHunterMovement = false;
-      }, 20 * GameConfiguration.getInstance().getHeadStart()));
+      }, 20 * GameConfiguration.getInstance().getHeadStart());
     }
 
     Bukkit.getServer().getPluginManager().registerEvents(this, plugin);
@@ -258,7 +260,12 @@ public class Game implements Listener {
   public void onEntityDeath(EntityDeathEvent e) {
     if (e.getEntity().getType() == EntityType.ENDER_DRAGON) {
       showAllChatMessage(Team.RUNNER.getColour() + "Runners win!");
-      Bukkit.getServer().shutdown();
+
+      for (Player player : Bukkit.getOnlinePlayers()) {
+        player.setGameMode(GameMode.SPECTATOR);
+      }
+
+      end();
     }
   }
 
@@ -285,6 +292,11 @@ public class Game implements Listener {
     for (Player player : Bukkit.getOnlinePlayers()) {
       player.spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacyText(message));
     }
+  }
+
+  public void end() {
+    HandlerList.unregisterAll(this);
+    Bukkit.getServer().getScheduler().cancelTask(taskId);
   }
 
   /**
