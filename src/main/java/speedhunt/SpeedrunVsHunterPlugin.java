@@ -1,6 +1,5 @@
 package speedhunt;
 
-import beansplusplus.gameconfig.ConfigLoader;
 import net.md_5.bungee.api.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -13,14 +12,13 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.util.List;
 
 import beansplusplus.gameconfig.GameConfiguration;
-
+import beansplusplus.gameconfig.ConfigLoader;
 
 public class SpeedrunVsHunterPlugin extends JavaPlugin implements CommandExecutor, Listener {
   private Game game;
 
   public void onEnable() {
     ConfigLoader.loadFromInput(getResource("config.yml"));
-
     getServer().getPluginManager().registerEvents(this, this);
     getCommand("start").setExecutor(this);
   }
