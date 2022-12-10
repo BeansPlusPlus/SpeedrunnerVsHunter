@@ -1,4 +1,4 @@
-package speedhunt.code;
+package speedhunt;
 
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
@@ -15,9 +15,13 @@ import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.*;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.scoreboard.DisplaySlot;
 import org.bukkit.scoreboard.Objective;
 import org.bukkit.scoreboard.Scoreboard;
+
+import beansplusplus.gameconfig.ConfigLoader;
+import beansplusplus.gameconfig.GameConfiguration;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -51,9 +55,18 @@ public class Game implements Listener {
 
   private Map<String, Team> assignedPlayers = new HashMap<>();
 
+  private Plugin plugin;
+
   public Game(SpeedrunVsHunterPlugin plugin) {
+    this.plugin = plugin;
+  }
+
+  /**
+   * Start game
+   */
+  public void start() {
     for (World world : Bukkit.getWorlds()) {
-      world.getWorldBorder().setSize(GameConfiguration.getInstance().getWorldBorder());
+      world.getWorldBorder().setSize(GameConfiguration.getConfig().getValue("border"));
     }
 
     for (Player player : Bukkit.getOnlinePlayers()) {
@@ -61,28 +74,45 @@ public class Game implements Listener {
       player.setLevel(0);
       player.setSaturation(20);
       player.getInventory().clear();
+      player.setGameMode(GameMode.SURVIVAL);
 
-      if (GameConfiguration.getInstance().getRunners().contains(player.getName())) {
+      List<String> runners = GameConfiguration.getConfig().getValue("runners");
+
+      if (runners.contains(player.getName())) {
         addToTeam(player.getName(), Team.RUNNER);
       } else {
         addToTeam(player.getName(), Team.HUNTER);
       }
     }
 
-    cancelHunterMovement = GameConfiguration.getInstance().getHeadStart() > 0;
+    int headStart = GameConfiguration.getConfig().getValue("headstart");
 
-    showAllChatMessage(ChatColor.BLUE + "Hunters are not allowed to move for " + GameConfiguration.getInstance().getHeadStart() + " seconds.");
+    cancelHunterMovement = headStart > 0;
+
+    showAllChatMessage(ChatColor.BLUE + "Hunters are not allowed to move for " + headStart + " seconds.");
 
     if (cancelHunterMovement) {
       taskId = Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(plugin, () -> {
         showAllChatMessage(ChatColor.BLUE + "Hunters can move now");
         cancelHunterMovement = false;
-      }, 20 * GameConfiguration.getInstance().getHeadStart());
+      }, 20 * headStart);
     }
 
     Bukkit.getServer().getPluginManager().registerEvents(this, plugin);
 
     refreshScoreboard();
+  }
+
+  /**
+   * End game
+   */
+  public void end() {
+    HandlerList.unregisterAll(this);
+    Bukkit.getServer().getScheduler().cancelTask(taskId);
+
+    for (Player player : Bukkit.getOnlinePlayers()) {
+      player.setGameMode(GameMode.SPECTATOR);
+    }
   }
 
   /**
@@ -261,10 +291,6 @@ public class Game implements Listener {
     if (e.getEntity().getType() == EntityType.ENDER_DRAGON) {
       showAllChatMessage(Team.RUNNER.getColour() + "Runners win!");
 
-      for (Player player : Bukkit.getOnlinePlayers()) {
-        player.setGameMode(GameMode.SPECTATOR);
-      }
-
       end();
     }
   }
@@ -281,22 +307,6 @@ public class Game implements Listener {
     if (getPlayerTeam(player.getName()) == Team.HUNTER) {
       player.getInventory().addItem(new ItemStack(Material.COMPASS));
     }
-  }
-
-  /**
-   * Show a message to everyone above the hotbar
-   *
-   * @param message
-   */
-  public void showAllMessage(String message) {
-    for (Player player : Bukkit.getOnlinePlayers()) {
-      player.spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacyText(message));
-    }
-  }
-
-  public void end() {
-    HandlerList.unregisterAll(this);
-    Bukkit.getServer().getScheduler().cancelTask(taskId);
   }
 
   /**
