@@ -5,6 +5,11 @@ plugins {
 group 'speedhunt.code'
 version '1.0'
 
+java {
+    sourceCompatibility = 16
+    targetCompatibility = 16
+}
+
 configurations.all { resolutionStrategy.cacheChangingModulesFor 0, 'seconds' }
 
 repositories {

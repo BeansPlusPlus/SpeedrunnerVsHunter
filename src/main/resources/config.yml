@@ -9,13 +9,3 @@ border:
   type: int
   default: 5000
   min: 100
-some_number:
-  type: double
-some_enum:
-  type: enum
-  options:
-    - o1
-    - o2
-    - o3
-    - o4
-    - peter
