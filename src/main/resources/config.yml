@@ -1,0 +1,11 @@
+runners:
+  type: player_list
+headstart:
+  type: int
+  default: 30
+  min: 0
+  max: 3600
+border:
+  type: int
+  default: 5000
+  min: 100
