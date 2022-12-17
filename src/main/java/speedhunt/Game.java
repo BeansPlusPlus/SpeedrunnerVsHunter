@@ -66,7 +66,7 @@ public class Game implements Listener {
    */
   public void start() {
     for (World world : Bukkit.getWorlds()) {
-      world.getWorldBorder().setSize((double) GameConfiguration.getConfig().getValue("border"));
+      world.getWorldBorder().setSize(GameConfiguration.getConfig().getValue("border"));
     }
 
     for (Player player : Bukkit.getOnlinePlayers()) {
