@@ -6,6 +6,6 @@ headstart:
   min: 0
   max: 3600
 border:
-  type: int
+  type: double
   default: 5000
   min: 100
