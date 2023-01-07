@@ -72,7 +72,7 @@ public class Game implements Listener {
     for (Player player : Bukkit.getOnlinePlayers()) {
       player.setHealth(20);
       player.setLevel(0);
-      player.setSaturation(20);
+      player.setFoodLevel(20);
       player.getInventory().clear();
       player.setGameMode(GameMode.SURVIVAL);
 
