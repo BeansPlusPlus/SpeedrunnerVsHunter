@@ -259,12 +259,8 @@ public class Game implements Listener {
   @EventHandler
   public void onPlayerMove(PlayerMoveEvent e) {
     if (cancelHunterMovement && getPlayerTeam(e.getPlayer().getName()) == Team.HUNTER) {
-      double dx = e.getFrom().getX() - e.getTo().getX();
-      double dz = e.getFrom().getZ() - e.getTo().getZ();
-
-      if (dx != 0 || dz != 0) {
-        e.setCancelled(true);
-      }
+      e.getTo().setX(e.getFrom().getX());
+      e.getTo().setZ(e.getFrom().getZ());
     }
   }
 
