@@ -65,10 +65,6 @@ public class Game implements Listener {
    * Start game
    */
   public void start() {
-    for (World world : Bukkit.getWorlds()) {
-      world.getWorldBorder().setSize(GameConfiguration.getConfig().getValue("border"));
-    }
-
     for (Player player : Bukkit.getOnlinePlayers()) {
       player.setHealth(20);
       player.setLevel(0);
@@ -84,6 +80,9 @@ public class Game implements Listener {
         addToTeam(player.getName(), Team.HUNTER);
       }
     }
+
+    World world = Bukkit.getWorld("world");
+    world.setTime(1000);
 
     int headStart = GameConfiguration.getConfig().getValue("headstart");
 
