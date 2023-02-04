@@ -326,6 +326,7 @@ public class Game implements Listener {
       return;
     }
 
+    ItemStack itemStack = hunter.getInventory().getItemInMainHand();
     CompassMeta compassMeta = (CompassMeta) hunter.getInventory().getItemInMainHand().getItemMeta();
 
     Location hunterLocation = hunter.getLocation();
@@ -351,8 +352,9 @@ public class Game implements Listener {
     if (compassLocation == null) {
       hunter.spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacyText(ChatColor.RED + "No-one to track..."));
     } else {
-      compassMeta.setLodestoneTracked(true);
-      compassMeta.setLodestone(compassLocation);
+      compassMeta.setLodestoneTracked(false);
+      compassMeta.setLodestone(new Location(hunter.getWorld(), 1000, 0, 1000));
+      itemStack.setItemMeta(compassMeta);
       hunter.spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacyText(ChatColor.GREEN + "Tracking: " + tracking));
     }
   }
