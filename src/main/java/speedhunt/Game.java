@@ -353,7 +353,7 @@ public class Game implements Listener {
       hunter.spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacyText(ChatColor.RED + "No-one to track..."));
     } else {
       compassMeta.setLodestoneTracked(false);
-      compassMeta.setLodestone(new Location(hunter.getWorld(), 1000, 0, 1000));
+      compassMeta.setLodestone(compassLocation);
       itemStack.setItemMeta(compassMeta);
       hunter.spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacyText(ChatColor.GREEN + "Tracking: " + tracking));
     }
