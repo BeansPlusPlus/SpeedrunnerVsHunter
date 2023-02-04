@@ -15,6 +15,7 @@ import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.*;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.CompassMeta;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scoreboard.DisplaySlot;
 import org.bukkit.scoreboard.Objective;
@@ -325,6 +326,8 @@ public class Game implements Listener {
       return;
     }
 
+    CompassMeta compassMeta = (CompassMeta) hunter.getInventory().getItemInMainHand().getItemMeta();
+
     Location hunterLocation = hunter.getLocation();
 
     Location compassLocation = null;
@@ -348,7 +351,8 @@ public class Game implements Listener {
     if (compassLocation == null) {
       hunter.spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacyText(ChatColor.RED + "No-one to track..."));
     } else {
-      hunter.setCompassTarget(compassLocation);
+      compassMeta.setLodestoneTracked(true);
+      compassMeta.setLodestone(compassLocation);
       hunter.spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacyText(ChatColor.GREEN + "Tracking: " + tracking));
     }
   }
