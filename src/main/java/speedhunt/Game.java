@@ -56,6 +56,7 @@ public class Game implements Listener {
   private double bedDamageMultiplier;
   private boolean cancelHunterMovement;
   private boolean autoCompass;
+  private boolean netherCompass;
 
   private Map<String, Team> assignedPlayers = new HashMap<>();
 
@@ -201,13 +202,27 @@ public class Game implements Listener {
   }
 
   private void centreCompass(Player player, ItemStack item) {
-    CompassMeta compassMeta = (CompassMeta) item.getItemMeta();
+    Player runner = nearestRunner(player.getLocation());
 
-    Location hunterLocation = player.getLocation();
+    if (runner == null) {
+      player.spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacyText(ChatColor.RED + "No-one to track..."));
+    } else {
+      if (netherCompass) {
+        CompassMeta compassMeta = (CompassMeta) item.getItemMeta();
+        compassMeta.setLodestoneTracked(false);
+        compassMeta.setLodestone(runner.getLocation());
+        item.setItemMeta(compassMeta);
+      } else {
+        player.setCompassTarget(runner.getLocation());
+      }
 
-    Location compassLocation = null;
+      player.spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacyText(ChatColor.GREEN + "Tracking: " + runner.getName()));
+    }
+  }
+
+  private Player nearestRunner(Location hunterLocation) {
+    Player nearestRunner = null;
     double distance = Integer.MAX_VALUE;
-    String tracking = null;
 
     for (Player runner : getOnlineForTeam(Team.RUNNER)) {
       Location runnerLocation = runner.getLocation();
@@ -218,19 +233,11 @@ public class Game implements Listener {
 
       if (newDistance < distance) {
         distance = newDistance;
-        compassLocation = runnerLocation;
-        tracking = runner.getName();
+        nearestRunner = runner;
       }
     }
 
-    if (compassLocation == null) {
-      player.spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacyText(ChatColor.RED + "No-one to track..."));
-    } else {
-      compassMeta.setLodestoneTracked(false);
-      compassMeta.setLodestone(compassLocation);
-      item.setItemMeta(compassMeta);
-      player.spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacyText(ChatColor.GREEN + "Tracking: " + tracking));
-    }
+    return nearestRunner;
   }
 
   public Scoreboard getScoreboard() {

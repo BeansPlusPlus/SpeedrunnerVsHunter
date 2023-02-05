@@ -15,3 +15,6 @@ bed_explosion_damage:
 auto_compass:
   type: boolean
   default: false
+nether_compass:
+  type: boolean
+  default: true
