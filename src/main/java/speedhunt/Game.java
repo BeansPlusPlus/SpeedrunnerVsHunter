@@ -11,6 +11,8 @@ import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.entity.EntityDamageByBlockEvent;
+import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.*;
@@ -21,12 +23,10 @@ import org.bukkit.scoreboard.DisplaySlot;
 import org.bukkit.scoreboard.Objective;
 import org.bukkit.scoreboard.Scoreboard;
 
-import beansplusplus.gameconfig.ConfigLoader;
-import beansplusplus.gameconfig.GameConfiguration;
-
 import java.util.*;
 import java.util.stream.Collectors;
 
+import beansplusplus.gameconfig.GameConfiguration;
 
 public class Game implements Listener {
   /**
@@ -51,8 +51,11 @@ public class Game implements Listener {
     }
   }
 
+
+  private int headStart;
+  private double bedDamageMultiplier;
   private boolean cancelHunterMovement;
-  private int taskId;
+  private boolean autoCompass;
 
   private Map<String, Team> assignedPlayers = new HashMap<>();
 
@@ -60,6 +63,20 @@ public class Game implements Listener {
 
   public Game(SpeedrunVsHunterPlugin plugin) {
     this.plugin = plugin;
+
+    headStart = (int) ((double) GameConfiguration.getConfig().getValue("headstart_minutes") * 60.0);
+
+    String bedDamage = GameConfiguration.getConfig().getValue("bed_explosion_damage");
+    if (bedDamage.equals("enabled")) {
+      bedDamageMultiplier = 1;
+    } else if (bedDamage.equals("nerfed")) {
+      bedDamageMultiplier = 0.33;
+    } else {
+      bedDamageMultiplier = 0;
+    }
+
+    autoCompass = GameConfiguration.getConfig().getValue("auto_compass");
+    cancelHunterMovement = headStart > 0;
   }
 
   /**
@@ -85,17 +102,17 @@ public class Game implements Listener {
     World world = Bukkit.getWorld("world");
     world.setTime(1000);
 
-    int headStart = GameConfiguration.getConfig().getValue("headstart");
-
-    cancelHunterMovement = headStart > 0;
-
     showAllChatMessage(ChatColor.BLUE + "Hunters are not allowed to move for " + headStart + " seconds.");
 
     if (cancelHunterMovement) {
-      taskId = Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(plugin, () -> {
+      Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(plugin, () -> {
         showAllChatMessage(ChatColor.BLUE + "Hunters can move now");
         cancelHunterMovement = false;
       }, 20 * headStart);
+    }
+
+    if (autoCompass) {
+      Bukkit.getServer().getScheduler().scheduleSyncRepeatingTask(plugin, this::centreAllCompasses, 20, 20);
     }
 
     Bukkit.getServer().getPluginManager().registerEvents(this, plugin);
@@ -108,11 +125,7 @@ public class Game implements Listener {
    */
   public void end() {
     HandlerList.unregisterAll(this);
-    Bukkit.getServer().getScheduler().cancelTask(taskId);
-
-    for (Player player : Bukkit.getOnlinePlayers()) {
-      player.setGameMode(GameMode.SPECTATOR);
-    }
+    Bukkit.getServer().getScheduler().cancelTasks(plugin);
   }
 
   /**
@@ -177,6 +190,49 @@ public class Game implements Listener {
     }
   }
 
+  private void centreAllCompasses() {
+    for (Player player : Bukkit.getOnlinePlayers()) {
+      if (getPlayerTeam(player.getName()) != Team.HUNTER) continue;
+
+      for (ItemStack item : player.getInventory().getContents()) {
+        if (item != null && item.getType() == Material.COMPASS) centreCompass(player, item);
+      }
+    }
+  }
+
+  private void centreCompass(Player player, ItemStack item) {
+    CompassMeta compassMeta = (CompassMeta) item.getItemMeta();
+
+    Location hunterLocation = player.getLocation();
+
+    Location compassLocation = null;
+    double distance = Integer.MAX_VALUE;
+    String tracking = null;
+
+    for (Player runner : getOnlineForTeam(Team.RUNNER)) {
+      Location runnerLocation = runner.getLocation();
+
+      if (!hunterLocation.getWorld().equals(runnerLocation.getWorld())) continue;
+
+      double newDistance = runnerLocation.distance(hunterLocation);
+
+      if (newDistance < distance) {
+        distance = newDistance;
+        compassLocation = runnerLocation;
+        tracking = runner.getName();
+      }
+    }
+
+    if (compassLocation == null) {
+      player.spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacyText(ChatColor.RED + "No-one to track..."));
+    } else {
+      compassMeta.setLodestoneTracked(false);
+      compassMeta.setLodestone(compassLocation);
+      item.setItemMeta(compassMeta);
+      player.spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacyText(ChatColor.GREEN + "Tracking: " + tracking));
+    }
+  }
+
   public Scoreboard getScoreboard() {
     Scoreboard scoreboard = Bukkit.getScoreboardManager().getNewScoreboard();
 
@@ -198,9 +254,7 @@ public class Game implements Listener {
     hunterTeam.setPrefix(Team.HUNTER.getColour() + "[HUNTER] ");
     runnerTeam.setPrefix(Team.RUNNER.getColour() + "[RUNNER] ");
 
-
     return scoreboard;
-
   }
 
   private void refreshScoreboard() {
@@ -288,6 +342,13 @@ public class Game implements Listener {
     }
   }
 
+  @EventHandler
+  public void onEntityDamageByBlockEvent(EntityDamageByBlockEvent e) {
+    if (e.getCause() == EntityDamageEvent.DamageCause.BLOCK_EXPLOSION) {
+      e.setDamage(e.getDamage() * bedDamageMultiplier);
+    }
+  }
+
   /**
    * Give hunters compass on respawn
    *
@@ -321,41 +382,14 @@ public class Game implements Listener {
     Player hunter = e.getPlayer();
 
     if (getPlayerTeam(hunter.getName()) != Team.HUNTER ||
+        hunter.getInventory().getItemInMainHand() == null ||
         hunter.getInventory().getItemInMainHand().getType() != Material.COMPASS ||
         (e.getAction() != Action.RIGHT_CLICK_AIR && e.getAction() != Action.RIGHT_CLICK_BLOCK)) {
       return;
     }
 
     ItemStack itemStack = hunter.getInventory().getItemInMainHand();
-    CompassMeta compassMeta = (CompassMeta) hunter.getInventory().getItemInMainHand().getItemMeta();
 
-    Location hunterLocation = hunter.getLocation();
-
-    Location compassLocation = null;
-    double distance = Integer.MAX_VALUE;
-    String tracking = null;
-
-    for (Player runner : getOnlineForTeam(Team.RUNNER)) {
-      Location runnerLocation = runner.getLocation();
-
-      if (!hunterLocation.getWorld().equals(runnerLocation.getWorld())) continue;
-
-      double newDistance = runnerLocation.distance(hunterLocation);
-
-      if (newDistance < distance) {
-        distance = newDistance;
-        compassLocation = runnerLocation;
-        tracking = runner.getName();
-      }
-    }
-
-    if (compassLocation == null) {
-      hunter.spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacyText(ChatColor.RED + "No-one to track..."));
-    } else {
-      compassMeta.setLodestoneTracked(false);
-      compassMeta.setLodestone(compassLocation);
-      itemStack.setItemMeta(compassMeta);
-      hunter.spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacyText(ChatColor.GREEN + "Tracking: " + tracking));
-    }
+    centreCompass(hunter, itemStack);
   }
 }

@@ -26,12 +26,12 @@ public class SpeedrunVsHunterPlugin extends JavaPlugin implements CommandExecuto
   @Override
   public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
     List<String> players = GameConfiguration.getConfig().getValue("runners");
-    if (players.size() == 0) {
-      sender.sendMessage(ChatColor.RED + "At least 1 runner required to start.");
-      sender.sendMessage(ChatColor.WHITE + "/config runners <runners>");
-
-      return false;
-    }
+//    if (players.size() == 0) {
+//      sender.sendMessage(ChatColor.RED + "At least 1 runner required to start.");
+//      sender.sendMessage(ChatColor.WHITE + "/config runners <runners>");
+//
+//      return false;
+//    }
 
     if (game != null) {
       game.end();

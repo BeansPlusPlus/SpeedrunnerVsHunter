@@ -1,7 +1,17 @@
 runners:
   type: player_list
-headstart:
-  type: int
-  default: 30
+headstart_minutes:
+  type: double
+  default: 0.5
   min: 0
-  max: 3600
+  max: 20
+bed_explosion_damage:
+  type: enum
+  default: enabled
+  options:
+    - enabled
+    - nerfed
+    - disabled
+auto_compass:
+  type: boolean
+  default: false
