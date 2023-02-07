@@ -2,6 +2,8 @@ main: speedhunt.SpeedrunVsHunterPlugin
 name: SpeedrunnerVsHunter
 version: 1
 api-version: 1.19
+depend:
+  - BeansGamePlugin
 description: >
   Speedrunner vs hunter type game
 commands:

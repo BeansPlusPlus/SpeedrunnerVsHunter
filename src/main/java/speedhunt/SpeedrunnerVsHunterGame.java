@@ -1,5 +1,7 @@
 package speedhunt;
 
+import beansplusplus.beansgameplugin.Game;
+import beansplusplus.beansgameplugin.GameConfiguration;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.*;
@@ -26,9 +28,7 @@ import org.bukkit.scoreboard.Scoreboard;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import beansplusplus.gameconfig.GameConfiguration;
-
-public class Game implements Listener {
+public class SpeedrunnerVsHunterGame implements Listener, Game {
   /**
    * Teams
    */
@@ -57,17 +57,18 @@ public class Game implements Listener {
   private boolean cancelHunterMovement;
   private boolean autoCompass;
   private boolean netherCompass;
+  private List<String> runners;
 
   private Map<String, Team> assignedPlayers = new HashMap<>();
 
   private Plugin plugin;
 
-  public Game(SpeedrunVsHunterPlugin plugin) {
+  public SpeedrunnerVsHunterGame(SpeedrunVsHunterPlugin plugin, GameConfiguration config) {
     this.plugin = plugin;
 
-    headStart = (int) ((double) GameConfiguration.getConfig().getValue("headstart_minutes") * 60.0);
+    headStart = (int) ((double) config.getValue("headstart_minutes") * 60.0);
 
-    String bedDamage = GameConfiguration.getConfig().getValue("bed_explosion_damage");
+    String bedDamage = config.getValue("bed_explosion_damage");
     if (bedDamage.equals("enabled")) {
       bedDamageMultiplier = 1;
     } else if (bedDamage.equals("nerfed")) {
@@ -76,8 +77,10 @@ public class Game implements Listener {
       bedDamageMultiplier = 0;
     }
 
-    autoCompass = GameConfiguration.getConfig().getValue("auto_compass");
+    autoCompass = config.getValue("auto_compass");
     cancelHunterMovement = headStart > 0;
+    runners = config.getValue("runners");
+    netherCompass = config.getValue("nether_compass");
   }
 
   /**
@@ -91,7 +94,6 @@ public class Game implements Listener {
       player.getInventory().clear();
       player.setGameMode(GameMode.SURVIVAL);
 
-      List<String> runners = GameConfiguration.getConfig().getValue("runners");
 
       if (runners.contains(player.getName())) {
         addToTeam(player.getName(), Team.RUNNER);
@@ -121,12 +123,20 @@ public class Game implements Listener {
     refreshScoreboard();
   }
 
-  /**
-   * End game
-   */
-  public void end() {
+  @Override
+  public void stop() {
     HandlerList.unregisterAll(this);
     Bukkit.getServer().getScheduler().cancelTasks(plugin);
+  }
+
+  @Override
+  public void pause() {
+
+  }
+
+  @Override
+  public void unpause() {
+
   }
 
   /**
@@ -345,7 +355,7 @@ public class Game implements Listener {
     if (e.getEntity().getType() == EntityType.ENDER_DRAGON) {
       showAllChatMessage(Team.RUNNER.getColour() + "Runners win!");
 
-      end();
+      stop();
     }
   }
 
