@@ -6,7 +6,3 @@ depend:
   - BeansGamePlugin
 description: >
   Speedrunner vs hunter type game
-commands:
-  start:
-    description: >
-      Begin game

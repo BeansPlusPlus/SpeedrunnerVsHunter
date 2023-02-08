@@ -2,6 +2,7 @@ package speedhunt;
 
 import beansplusplus.beansgameplugin.Game;
 import beansplusplus.beansgameplugin.GameConfiguration;
+import beansplusplus.beansgameplugin.GameState;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.*;
@@ -51,20 +52,21 @@ public class SpeedrunnerVsHunterGame implements Listener, Game {
     }
   }
 
-
   private int headStart;
   private double bedDamageMultiplier;
   private boolean cancelHunterMovement;
   private boolean autoCompass;
   private boolean netherCompass;
+  private GameState state;
   private List<String> runners;
 
   private Map<String, Team> assignedPlayers = new HashMap<>();
 
   private Plugin plugin;
 
-  public SpeedrunnerVsHunterGame(SpeedrunVsHunterPlugin plugin, GameConfiguration config) {
+  public SpeedrunnerVsHunterGame(SpeedrunVsHunterPlugin plugin, GameConfiguration config, GameState state) {
     this.plugin = plugin;
+    this.state = state;
 
     headStart = (int) ((double) config.getValue("headstart_minutes") * 60.0);
 
@@ -124,19 +126,9 @@ public class SpeedrunnerVsHunterGame implements Listener, Game {
   }
 
   @Override
-  public void stop() {
+  public void cleanUp() {
     HandlerList.unregisterAll(this);
     Bukkit.getServer().getScheduler().cancelTasks(plugin);
-  }
-
-  @Override
-  public void pause() {
-
-  }
-
-  @Override
-  public void unpause() {
-
   }
 
   /**
@@ -156,7 +148,6 @@ public class SpeedrunnerVsHunterGame implements Listener, Game {
   private void removePlayer(String playerName) {
     assignedPlayers.remove(playerName);
   }
-
 
   /**
    * Get the team a player is on
@@ -291,7 +282,7 @@ public class SpeedrunnerVsHunterGame implements Listener, Game {
       refreshScoreboard();
       if (getTeamSize(Team.RUNNER) == 0) {
         showAllChatMessage(Team.HUNTER.getColour() + "Hunters win!");
-
+        state.stopGame();
       } else {
         e.getEntity().sendMessage(ChatColor.BLUE + "Right click an alive runner to rejoin the running team.");
       }
@@ -355,7 +346,7 @@ public class SpeedrunnerVsHunterGame implements Listener, Game {
     if (e.getEntity().getType() == EntityType.ENDER_DRAGON) {
       showAllChatMessage(Team.RUNNER.getColour() + "Runners win!");
 
-      stop();
+      state.stopGame();
     }
   }
 
